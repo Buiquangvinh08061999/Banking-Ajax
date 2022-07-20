@@ -45,7 +45,6 @@ public class AppConfig implements WebMvcConfigurer, ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
 
-
     //Cấu hình Thymeleaf
     @Bean
     public SpringResourceTemplateResolver templateResolver() {

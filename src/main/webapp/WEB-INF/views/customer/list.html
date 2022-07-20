@@ -41,38 +41,67 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td></td>
-                    <td>1</td>
-                    <td>NVA</td>
-                    <td>nva@co.cc</td>
-                    <td>2345</td>
-                    <td>0</td>
-                    <td>TT Huế</td>
-                    <td>TP Huế</td>
-                    <td>Phường Phú Nhuận</td>
-                    <td>28 NTP</td>
-                </tr>
+
             </tbody>
 
         </table>
 
     </div>
 </div>
+<!--End container-->
+<div class="footer">
+
+</div>
 
 
     <th:block th:replace="/customer/modal_create :: modal_create" />
 
+    <th:block th:replace="/customer/modal_deposit :: modal_deposit" />
+
+    <th:block th:replace="/customer/footer :: footer" />
+
     <th:block th:replace="/layout/script :: script" />
 
     <script>
+
         let locationRegion = new LocationRegion();
 
         let customer = new Customer();
 
+        let customerId = null;
+
         $('.create-modal').on('click', function (){
             $('#modalCreateCustomer').modal('show')
         })
+
+        function loadCustomer() {
+            $.ajax({
+                "type": "GET",
+                "url": "http://localhost:8089/api/customers/"
+            })
+            .done((data)=>{
+                $.each(data , (i, item)=>{
+                    let str =` <tr id="tr_${item.id}">
+                                <td><span id="span_${item.id}" class="select-tab unselected"></td>
+                                <td>${item.id}</td>
+                                <td>${item.fullName}</td>
+                                <td>${item.email}</td>
+                                <td>${item.phone}</td>
+                                <td>${item.balance}</td>
+                                <td>${item.locationRegion.provinceName}</td>
+                                <td>${item.locationRegion.districtName}</td>
+                                <td>${item.locationRegion.wardName}</td>
+                                <td>${item.locationRegion.address}</td>
+                            </tr>`;
+
+                    $('#tbListCustomers tbody').prepend(str);
+                    handleShowFooter();
+                })
+
+            })
+        }
+
+        loadCustomer()
 
         function drawProvinces() {
          return $.ajax({
@@ -86,7 +115,7 @@
             .done((data) =>{
                 $.each(data.results, (i, item)=>{
 
-                    let str= `<option value="${item.province_id}"> ${item.province_name} </option>`;
+                    let str= ` <option value="${item.province_id}"> ${item.province_name} </option> `;
                     $('#province').prepend(str);
                 })
             })
@@ -106,8 +135,7 @@
              })
             .done((data) => {
                 $.each(data.results, (i, item) => {
-
-                    let str = `<option value="${item.district_id}">${item.district_name}</option>`;
+                    let str = `<option value="${item.district_id}"> ${item.district_name} </option>`;
 
                     $('#district').prepend(str);
                 })
@@ -127,7 +155,6 @@
             })
                 .done((data) => {
                     $.each(data.results, (i, item) => {
-
                         let str = `<option value="${item.ward_id}">${item.ward_name}</option>`;
 
                         $('#ward').prepend(str);
@@ -138,14 +165,187 @@
                 })
         }
 
+        /*Hàm xử lí tỉnh lấy theo id của tĩnh xử lí chuỗi liên tục*/
         drawProvinces().then(()=>{
             let provinceId = $('#province').val();
             drawDistricts(provinceId).then(()=>{
-
                 let districtId = $('#district').val()
                 drawWards(districtId)
             })
         });
+
+        // Hàm lấy xã theo id của huyện
+        function getAllWardByDistrictId(districtId){
+            let listWard = [];
+            $.ajax({
+                async:false,
+                type:"GET",
+                url:"https://vapi.vnappmob.com/api/province/ward/" + districtId
+            })
+            .done((data) =>{
+                listWard = data;
+            })
+            return listWard;
+        }
+        // Hàm lấy huyện theo id của tĩnh
+        function getAllDistrictIdByProvenceId(provenceId){
+            let listDistrict = [];
+            $.ajax({
+                async:false,
+                type:"GET",
+                url:"https://vapi.vnappmob.com/api/province/district/" + provenceId
+            })
+            .done((data) =>{
+                listDistrict = data;
+            })
+            return listDistrict;
+        }
+        // Hàm xử lý sự kiện thay đổi tỉnh / tp
+        function districtChange(provinceIdChange){
+            let listProvincetChange = getAllDistrictIdByProvenceId(provinceIdChange);
+            let str ="";
+            $.each(listProvincetChange.results, (i, item) =>{
+                str +=`<option value="${item.district_id}">${item.district_name}</option>`;
+            })
+
+            $('#district').empty();
+
+            $('#district').prepend(str);
+
+            let districtIdChange = (listProvincetChange.results)[0].district_id;
+
+            wardChange(districtIdChange);
+        }
+
+        //Hàm xử lý sự kiện thay đổi xã khi huyện thay đổi
+        function wardChange(districtIdChange){
+            let listDistrictChange = getAllWardByDistrictId(districtIdChange);
+            let str= "";
+            $.each(listDistrictChange.results, (i, item)=>{
+                 str += `<option value = "${item.ward_id}">${item.ward_name}</option>`;
+            })
+
+            $('#ward').empty();
+
+            $('#ward').prepend(str);
+        }
+        // Sự kiện thay đổi tỉnh khi tạo mới, huyện và xã sẻ thay đổi dựa theo Tỉnh
+        $('#province').on('change', function (){
+            let provinceId = $('#province').val()
+            districtChange(provinceId);
+        })
+
+
+        function handleShowFooter(){
+            $('#tbListCustomers tbody tr').on('click', function (){
+
+                customerId = $(this).attr('id').replace('tr_', '');
+                // console.log(id)
+                $("#tbListCustomers tbody tr td span").removeClass("selected").addClass("unselected");
+                $(`#span_${customerId}`).removeClass("unselected").addClass("selected");
+
+                let temFooter = $.validator.format($.trim($('#tempFooter').val().toString()))
+                $('.footer').html(temFooter)
+
+                // handleShowDeposit();
+            })
+        }
+
+        handleShowFooter();
+
+
+        $('#btnCreateCustomer').on('click', () => {
+
+            locationRegion.provinceId = $('#province').val();
+            locationRegion.provinceName = $('#province :selected').text();
+            locationRegion.districtId = $('#district').val();
+            locationRegion.districtName = $('#district :selected').text();
+            locationRegion.wardId = $('#ward').val();
+            locationRegion.wardName = $('#ward :selected').text();
+
+            customer.fullName = $('#fullName').val();
+            customer.email = $('#email').val();
+            customer.phone = $('#phone').val();
+
+            customer.locationRegion = locationRegion;
+
+
+            $.ajax({
+                headers: {
+                    "accept": "application/json",
+                    "content-type": "application/json"
+                },
+                type: "POST",
+                url: "http://localhost:8089/api/customers/create/",
+                data: JSON.stringify(customer)
+            })
+            .done((item) => {
+                customer = item;
+                locationRegion = customer.locationRegion
+
+                let str =` <tr id="tr_${customer.id}">
+                                <td><span id="span_${item.id}" class="select-tab unselected"></td>
+                                <td>${customer.id}</td>
+                                <td>${customer.fullName}</td>
+                                <td>${customer.email}</td>
+                                <td>${customer.phone}</td>
+                                <td>${customer.balance}</td>
+                                <td>${locationRegion.provinceName}</td>
+                                <td>${locationRegion.districtName}</td>
+                                <td>${locationRegion.wardName}</td>
+                                <td>${locationRegion.address}</td>
+                            </tr>`;
+
+                $('#tbListCustomers tbody').prepend(str);
+
+                $('#modalCreateCustomer').modal('hide')
+
+                clearInput();/*clear lại các ô input về rỗng*/
+                handleShowFooter();/*cho phép click vào để hiện thị các ô chức năng lên*/
+                App.SweetAlert.showSuccessAlert("Tạo mới khách hàng thành công")
+
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+        })
+
+        function clearInput(){
+            $('#fullName').val("");
+            $('#email').val("");
+            $('#phone').val("");
+            $('#address').val("");
+        }
+
+        function handleShowDeposit(){
+            $('button.deposit').on('click', function (){
+                $.ajax({
+                    headers: {
+                        "accept": "application/json",
+                        "content-type": "application/json"
+                    },
+                    type: "GET",
+                    url:"http://localhost:8089/api/customers/" + customerId
+                })
+                .done((data)=>{
+                    customer = data;
+
+                    $('#customerIdDep').val(customer.id)
+                    $('#fullNameDep').val(customer.fullName)
+                    $('#balanceDep').val(customer.balance)
+
+                    $('#modalDeposit').modal('show')
+                })
+                .fail((jqXHR)=>{
+                    App.SweetAlert.showErrorAlert("Lỗi rồi")
+                })
+
+            })
+        }
+
+
+        // $('#btnDepositMoney')
+
 
 
 
@@ -164,6 +364,11 @@
 
 
     </script>
+
+
+
+
+
 </body>
 </html>
 

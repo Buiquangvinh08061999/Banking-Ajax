@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 import javax.validation.constraints.Digits;
@@ -17,6 +18,8 @@ import java.util.Date;
 
 @Entity
 @Table(name = "deposits")
+@Accessors(chain = true)
+
 public class Deposit extends BaseEntities{
 
     @Id

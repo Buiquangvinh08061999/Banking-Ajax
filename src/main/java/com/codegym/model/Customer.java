@@ -1,10 +1,12 @@
 package com.codegym.model;
 
 
+import com.codegym.model.dto.CustomerDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 import javax.validation.constraints.Digits;
@@ -19,6 +21,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "customers")
+@Accessors(chain = true)
+
 public class Customer extends BaseEntities{
 
     @Id
@@ -42,7 +46,6 @@ public class Customer extends BaseEntities{
     @JoinColumn(name ="location_region_id", nullable = false)
     private LocationRegion locationRegion;
 
-
     @OneToMany(mappedBy = "customer")
     private Set<Deposit> deposits;
 
@@ -56,7 +59,15 @@ public class Customer extends BaseEntities{
     private Set<Transfer> recipient;
 
 
-
+    public CustomerDTO toCustomerDTO() {
+        return new CustomerDTO()
+                .setId(id)
+                .setFullName(fullName)
+                .setEmail(email)
+                .setPhone(phone)
+                .setBalance(balance)
+                .setLocationRegion(locationRegion.toLocationRegionDTO());
+    }
 
 
 }

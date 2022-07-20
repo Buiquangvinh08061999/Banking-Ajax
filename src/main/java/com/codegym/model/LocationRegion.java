@@ -1,6 +1,8 @@
 package com.codegym.model;
 
+import com.codegym.model.dto.LocationRegionDTO;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 import javax.persistence.*;
 
@@ -11,6 +13,8 @@ import javax.persistence.*;
 
 @Entity
 @Table(name ="location_region")
+
+@Accessors(chain = true)
 public class LocationRegion {
 
     @Id
@@ -40,4 +44,15 @@ public class LocationRegion {
     @OneToOne(mappedBy = "locationRegion")
     private Customer customer;
 
+    public LocationRegionDTO toLocationRegionDTO() {
+        return new LocationRegionDTO()
+                .setId(id)
+                .setProvinceId(provinceId)
+                .setProvinceName(provinceName)
+                .setDistrictId(districtId)
+                .setDistrictName(districtName)
+                .setWardId(wardId)
+                .setWardName(wardName)
+                .setAddress(address);
+    }
 }

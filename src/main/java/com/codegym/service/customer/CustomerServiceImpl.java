@@ -47,6 +47,11 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    public Boolean existsByEmail(String email) {
+        return customerRepository.existsByEmail(email);
+    }
+
+    @Override
     public Customer save(Customer customer) {
         LocationRegion locationRegion = locationRegionRepository.save(customer.getLocationRegion());
         customer.setLocationRegion(locationRegion);
